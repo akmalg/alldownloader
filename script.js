@@ -6,7 +6,7 @@ const resultDiv = document.getElementById('result');
 const errorDiv = document.getElementById('error-message');
 
 // --- Konfigurasi API (Diambil dari screenshot Anda) ---
-const API_KEY = '7ca2049d59msh55c6b0de88a2cd3p1d7704jsn0047b6556610';
+const API_KEY = '9a78c3b0f6msh9054d569a5963b2p1a524djsna749bd035cd5';
 const API_HOST = 'tiktok-download-without-watermark.p.rapidapi.com';
 const API_BASE_URL = 'https://tiktok-download-without-watermark.p.rapidapi.com/analysis';
 
@@ -80,4 +80,5 @@ function displayResult(data) {
 
 function showError(message) {
     errorDiv.textContent = `Terjadi Kesalahan: ${message}`;
+
 }
