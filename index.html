@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Downloader</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎵 TikTok Downloader</h1>
+        <p>Tempel URL video TikTok untuk mengunduh tanpa watermark.</p>
+        
+        <div class="input-group">
+            <input type="text" id="tiktok-url" placeholder="https.tiktok.com/@user/video/...">
+            <button id="download-btn">Unduh</button>
+        </div>
+
+        <div id="loader" class="loader" style="display: none;"></div>
+        <div id="result"></div>
+        <div id="error-message" class="error"></div>
+    </div>
+
+    <footer>
+        Dibuat dengan HTML, CSS, JS. Perlu API pihak ketiga untuk berfungsi.
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
