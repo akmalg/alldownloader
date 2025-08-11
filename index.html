@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Downloader</title>
+    <title>Social Media Downloader</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -12,12 +13,16 @@
 <body>
 
     <div class="container">
-        <h1>🎵 TikTok Downloader</h1>
-        <p>Tempel URL video TikTok untuk mengunduh tanpa watermark.</p>
+        <div class="icon-container">
+            <i class="fab fa-tiktok"></i>
+            <i class="fab fa-facebook"></i>
+        </div>
+        <h1>All-in-One Video Downloader</h1>
+        <p>Tempel URL video dari TikTok atau Facebook di bawah ini.</p>
         
         <div class="input-group">
-            <input type="text" id="tiktok-url" placeholder="https.tiktok.com/@user/video/...">
-            <button id="download-btn">Unduh</button>
+            <input type="text" id="video-url" placeholder="https://www.tiktok.com/... atau https://www.facebook.com/...">
+            <button id="download-btn">Dapatkan Video</button>
         </div>
 
         <div id="loader" class="loader" style="display: none;"></div>
@@ -26,7 +31,7 @@
     </div>
 
     <footer>
-        Dibuat dengan HTML, CSS, JS. Perlu API pihak ketiga untuk berfungsi.
+        Dibuat dengan ❤️. Mendukung TikTok & Facebook.
     </footer>
 
     <script src="script.js"></script>
