@@ -10,10 +10,10 @@ const TIKTOK_API_KEY = '9a78c3b0f6msh9054d569a5963b2p1a524djsna749bd035cd5';
 const TIKTOK_API_HOST = 'tiktok-download-without-watermark.p.rapidapi.com';
 const TIKTOK_API_URL = 'https://tiktok-download-without-watermark.p.rapidapi.com/analysis';
 
-// --- Konfigurasi API Facebook (DIGANTI DENGAN API BARU) ---
-const FACEBOOK_API_KEY = '46b7910bf4msh2cd727db39747b6p1a897djsn99d4bab356b4'; // Key Anda sama
-const FACEBOOK_API_HOST = 'free-facebook-downloader.p.rapidapi.com'; // Host BARU
-const FACEBOOK_API_URL = 'https://free-facebook-downloader.p.rapidapi.com/external-api/facebook-video-downloader'; // URL Endpoint BARU
+// --- Konfigurasi API Facebook (Tidak berubah) ---
+const FACEBOOK_API_KEY = '46b7910bf4msh2cd727db39747b6p1a897djsn99d4bab356b4';
+const FACEBOOK_API_HOST = 'free-facebook-downloader.p.rapidapi.com';
+const FACEBOOK_API_URL = 'https://free-facebook-downloader.p.rapidapi.com/external-api/facebook-video-downloader';
 
 // --- Fungsi Universal untuk Memaksa Download ---
 async function forceDownload(url, fileName) {
@@ -84,26 +84,25 @@ async function fetchTikTok(url) {
     } catch (error) { showError(error.message); } finally { loader.style.display = 'none'; }
 }
 
-// --- Fetcher Khusus Facebook (DIMODIFIKASI UNTUK API BARU) ---
+// --- Fetcher Khusus Facebook ---
 async function fetchFacebook(url) {
-    // API ini mengirim URL sebagai query parameter
     const fullApiUrl = `${FACEBOOK_API_URL}?url=${encodeURIComponent(url)}`;
     const options = {
-        method: 'POST', // Metode tetap POST sesuai dokumentasi
+        method: 'POST',
         headers: {
             'X-RapidAPI-Key': FACEBOOK_API_KEY,
             'X-RapidAPI-Host': FACEBOOK_API_HOST
         }
-        // Tidak ada 'body' karena URL sudah ada di endpoint
     };
     try {
         const response = await fetch(fullApiUrl, options);
         if (!response.ok) throw new Error(`API Facebook merespons dengan error.`);
         const data = await response.json();
         
-        // PENTING: Struktur data di bawah ini adalah tebakan. Lihat catatan di bawah.
-        if (data.error || (!data.video_sd && !data.video_hd)) {
-            throw new Error(data.message || 'API Facebook tidak menemukan link unduhan.');
+        // --- PERBAIKAN DI SINI ---
+        // Kita cek struktur yang benar: data.links['Download Low Quality']
+        if (!data.success || !data.links || !data.links["Download Low Quality"]) {
+            throw new Error('API Facebook tidak menemukan link unduhan.');
         }
         displayFacebookResult(data);
     } catch (error) { showError(error.message); } finally { loader.style.display = 'none'; }
@@ -127,25 +126,28 @@ function displayTikTokResult(data) {
     });
 }
 
-// --- Display Result Khusus Facebook (DISESUAIKAN DENGAN TEBAKAN API BARU) ---
+// --- Display Result Khusus Facebook ---
 function displayFacebookResult(data) {
     const title = data.title || 'facebook-video';
     const safeFileName = title.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 50);
 
     let downloadButtonsHTML = '';
-    // Kita cek 'video_sd' dan 'video_hd' sebagai tebakan
-    if (data.video_sd) {
-        downloadButtonsHTML += `<button class="download-link" data-url="${data.video_sd}" data-quality="sd">⬇️ Unduh SD</button>`;
+    
+    // --- PERBAIKAN DI SINI ---
+    // Kita gunakan nama kunci yang benar dari JSON
+    const sd_link = data.links["Download Low Quality"];
+    const hd_link = data.links["Download High Quality"];
+
+    if (sd_link) {
+        downloadButtonsHTML += `<button class="download-link" data-url="${sd_link}" data-quality="sd">⬇️ Unduh SD</button>`;
     }
-    if (data.video_hd) {
-        downloadButtonsHTML += `<button class="download-link" data-url="${data.video_hd}" data-quality="hd">⬇️ Unduh HD</button>`;
+    if (hd_link) {
+        downloadButtonsHTML += `<button class="download-link" data-url="${hd_link}" data-quality="hd">⬇️ Unduh HD</button>`;
     }
     
-    const thumbnailHTML = data.thumbnail ? `<div class="thumbnail-container"><img src="${data.thumbnail}" alt="Video thumbnail"></div>` : '';
-
+    // API ini sepertinya tidak menyediakan thumbnail, jadi kita hapus saja
     resultDiv.innerHTML = `
         <h3>${title}</h3>
-        ${thumbnailHTML}
         <div class="button-group">${downloadButtonsHTML}</div>
         <p id="download-status" style="display:none;"></p> 
     `;
