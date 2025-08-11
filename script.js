@@ -1,105 +1,158 @@
 // --- Elemen DOM ---
-const urlInput = document.getElementById('tiktok-url');
+const urlInput = document.getElementById('video-url');
 const downloadBtn = document.getElementById('download-btn');
 const loader = document.getElementById('loader');
 const resultDiv = document.getElementById('result');
 const errorDiv = document.getElementById('error-message');
 
-// --- Konfigurasi API (Milik Anda, sudah benar) ---
-const API_KEY = '9a78c3b0f6msh9054d569a5963b2p1a524djsna749bd035cd5';
-const API_HOST = 'tiktok-download-without-watermark.p.rapidapi.com';
-const API_BASE_URL = 'https://tiktok-download-without-watermark.p.rapidapi.com/analysis';
+// --- Konfigurasi API TikTok (Dari proyek sebelumnya, sudah benar) ---
+const TIKTOK_API_KEY = '9a78c3b0f6msh9054d569a5963b2p1a524djsna749bd035cd5';
+const TIKTOK_API_HOST = 'tiktok-download-without-watermark.p.rapidapi.com';
+const TIKTOK_API_URL = 'https://tiktok-download-without-watermark.p.rapidapi.com/analysis';
 
-// --- FUNGSI BARU UNTUK MEMAKSA DOWNLOAD ---
+// --- Konfigurasi API Facebook (SUDAH DIISI SESUAI SCREENSHOT ANDA) ---
+const FACEBOOK_API_KEY = '46b7910bf4msh2cd727db39747b6p1a897djsn99d4bab356b4';
+const FACEBOOK_API_HOST = 'facebook-media-downloader1.p.rapidapi.com';
+const FACEBOOK_API_URL = 'https://facebook-media-downloader1.p.rapidapi.com/get_media';
+
+// --- Fungsi Universal untuk Memaksa Download ---
 async function forceDownload(url, fileName) {
-  const statusElement = document.getElementById('download-status');
-  try {
-    statusElement.textContent = 'Mengunduh data video... (Mungkin perlu waktu)';
-    statusElement.style.display = 'block';
-
-    // 1. Ambil data video sebagai blob
-    const response = await fetch(url);
-    const blob = await response.blob();
-
-    // 2. Buat URL sementara untuk blob
-    const blobUrl = window.URL.createObjectURL(blob);
-
-    // 3. Buat link sementara, klik, lalu hapus
-    const anchor = document.createElement('a');
-    anchor.href = blobUrl;
-    anchor.download = fileName;
-    document.body.appendChild(anchor); // Diperlukan untuk Firefox
-    anchor.click();
-    anchor.remove();
-
-    // 4. Hapus URL blob untuk membebaskan memori
-    window.URL.revokeObjectURL(blobUrl);
-    statusElement.textContent = 'Download dimulai!';
-  } catch (err) {
-    statusElement.textContent = 'Gagal mengunduh file. Coba putar dan simpan manual.';
-    console.error(err);
-  }
+    const statusElement = document.getElementById('download-status');
+    if (!statusElement) return;
+    try {
+        statusElement.textContent = 'Mengunduh data video... (Mungkin perlu waktu)';
+        statusElement.style.display = 'block';
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        statusElement.textContent = 'Download dimulai!';
+    } catch (err) {
+        statusElement.textContent = 'Gagal mengunduh file. Browser Anda mungkin memblokirnya.';
+        console.error(err);
+    }
 }
 
-// --- Event Listener ---
-downloadBtn.addEventListener('click', handleDownload);
+// --- Fungsi Universal untuk Menampilkan Error ---
+function showError(message) {
+    errorDiv.textContent = `Terjadi Kesalahan: ${message}`;
+}
 
-async function handleDownload() {
+// --- Logika Utama (Deteksi Otomatis) ---
+downloadBtn.addEventListener('click', () => {
     const url = urlInput.value.trim();
     if (!url) {
-        showError('Silakan masukkan URL TikTok.');
+        showError('Silakan masukkan URL video terlebih dahulu.');
         return;
     }
     loader.style.display = 'block';
     resultDiv.innerHTML = '';
     errorDiv.textContent = '';
-    const fullApiUrl = `${API_BASE_URL}?url=${encodeURIComponent(url)}`;
+
+    if (url.includes('tiktok.com')) {
+        fetchTikTok(url);
+    } else if (url.includes('facebook.com') || url.includes('fb.watch')) {
+        fetchFacebook(url);
+    } else {
+        showError('URL tidak didukung. Harap masukkan link dari TikTok atau Facebook.');
+        loader.style.display = 'none';
+    }
+});
+
+
+// --- Fetcher Khusus TikTok ---
+async function fetchTikTok(url) {
+    const fullApiUrl = `${TIKTOK_API_URL}?url=${encodeURIComponent(url)}`;
     const options = {
         method: 'GET',
-        headers: {
-            'X-RapidAPI-Key': API_KEY,
-            'X-RapidAPI-Host': API_HOST
-        }
+        headers: { 'X-RapidAPI-Key': TIKTOK_API_KEY, 'X-RapidAPI-Host': TIKTOK_API_HOST }
     };
     try {
         const response = await fetch(fullApiUrl, options);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.message || `Gagal menghubungi API. Status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`API TikTok merespons dengan error.`);
         const data = await response.json();
         if (data.status === 'error' || !data.data || !data.data.play) {
-             throw new Error(data.message || 'API tidak mengembalikan link video yang valid.');
+             throw new Error('API TikTok tidak mengembalikan link video yang valid.');
         }
-        displayResult(data.data);
-    } catch (error) {
-        showError(error.message);
-    } finally {
-        loader.style.display = 'none';
-    }
+        displayTikTokResult(data.data);
+    } catch (error) { showError(error.message); } finally { loader.style.display = 'none'; }
 }
 
-function displayResult(data) {
+// --- Fetcher Khusus Facebook ---
+async function fetchFacebook(url) {
+    const options = {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'X-RapidAPI-Key': FACEBOOK_API_KEY,
+            'X-RapidAPI-Host': FACEBOOK_API_HOST
+        },
+        body: JSON.stringify({ url: url })
+    };
+    try {
+        const response = await fetch(FACEBOOK_API_URL, options);
+        if (!response.ok) throw new Error(`API Facebook merespons dengan error.`);
+        const data = await response.json();
+        
+        // Penyesuaian untuk struktur API ini
+        if (data.error || !data.links || (!data.links.sd && !data.links.hd)) {
+            throw new Error(data.message || 'API Facebook tidak menemukan link unduhan.');
+        }
+        displayFacebookResult(data);
+    } catch (error) { showError(error.message); } finally { loader.style.display = 'none'; }
+}
+
+
+// --- Display Result Khusus TikTok ---
+function displayTikTokResult(data) {
     const videoUrl = data.play; 
     const videoTitle = data.title || 'tiktok-video';
+    const safeFileName = videoTitle.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 50);
 
-    // --- PERUBAHAN DI SINI ---
-    // Tombol sekarang menjadi <button> biasa, bukan link <a>
     resultDiv.innerHTML = `
         <h3>${videoTitle}</h3>
         <video controls src="${videoUrl}" type="video/mp4"></video>
         <button id="force-download-btn" class="download-link">⬇️ Simpan Video</button>
-        <p id="download-status" style="display:none; font-size:14px; color:#555;"></p> 
+        <p id="download-status" style="display:none;"></p> 
     `;
-
-    // Tambahkan event listener ke tombol yang baru dibuat
     document.getElementById('force-download-btn').addEventListener('click', () => {
-        // Ganti karakter yang tidak valid untuk nama file
-        const safeFileName = videoTitle.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 50);
         forceDownload(videoUrl, `${safeFileName}.mp4`);
     });
 }
 
-function showError(message) {
-    errorDiv.textContent = `Terjadi Kesalahan: ${message}`;
+// --- Display Result Khusus Facebook ---
+function displayFacebookResult(data) {
+    // Penyesuaian struktur data berdasarkan kemungkinan dari API ini
+    const title = data.title || 'facebook-video';
+    const safeFileName = title.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 50);
+
+    let downloadButtonsHTML = '';
+    // API ini mungkin hanya menyediakan satu kualitas, kita cek keduanya
+    if (data.links && data.links.sd) {
+        downloadButtonsHTML += `<button class="download-link" data-url="${data.links.sd}" data-quality="sd">⬇️ Unduh SD</button>`;
+    }
+    if (data.links && data.links.hd) {
+        downloadButtonsHTML += `<button class="download-link" data-url="${data.links.hd}" data-quality="hd">⬇️ Unduh HD</button>`;
+    }
+    
+    // Gunakan thumbnail jika ada, jika tidak, jangan tampilkan gambar
+    const thumbnailHTML = data.thumbnail ? `<div class="thumbnail-container"><img src="${data.thumbnail}" alt="Video thumbnail"></div>` : '';
+
+    resultDiv.innerHTML = `
+        <h3>${title}</h3>
+        ${thumbnailHTML}
+        <div class="button-group">${downloadButtonsHTML}</div>
+        <p id="download-status" style="display:none;"></p> 
+    `;
+    document.querySelectorAll('.download-link').forEach(button => {
+        button.addEventListener('click', (e) => {
+            forceDownload(e.target.dataset.url, `${safeFileName}_${e.target.dataset.quality}.mp4`);
+        });
+    });
 }
